@@ -1,6 +1,5 @@
 import pygame
 import random
-from agent import DQNAgent, ReplayBuffer
 import matplotlib.pyplot as plt
 import numpy as np
 
