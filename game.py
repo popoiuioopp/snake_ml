@@ -13,7 +13,6 @@ class SnakeGame:
         self.height = height
         self.speed = speed
         self.move_limit = move_limit
-        self.cur_move = 0
         self.game_over_reason = ""
 
         # Colors
@@ -35,30 +34,16 @@ class SnakeGame:
 
         self.setGameStart()
 
-    def gameLoop(self, agent, train=False):
+    def gameLoop(self):
         """Main game loop."""
-        self.setGameStart()
-        total_reward = 0
-        while not self.game_over:
-            self.handleEvents()
-            state = self.get_game_state()
-            action = agent.act(state)
-            self.direction = self.get_direction_from_action(action)
-            self.updateGame()
-            if self.cur_move > self.move_limit:
-                self.game_over_reason = "Move limit exceeded"
-                self.game_over = True
-            next_state = self.get_game_state()
-            reward = self.get_reward(state, next_state)
-            total_reward += reward
-            done = self.game_over
-            agent.observe(state, reward, action, next_state, done)
-            if train:
-                agent.train()
-            self.drawScreen()
-            self.cur_move += 1
-        print(f"Dying reason: {self.game_over_reason}")
-        return total_reward
+        while True:
+            self.setGameStart()
+            while not self.game_over:
+                self.handleEvents()
+                self.updateGame()
+                self.drawScreen()
+            self.drawGameOverScreen()
+            self.handleGameOver()
 
     def handleEvents(self):
         """Handles user inputs."""
@@ -170,7 +155,6 @@ class SnakeGame:
         self.score = 0
         self.full = False
         self.snake_list = [(self.headX, self.headY)]
-        self.cur_move = 0
 
     def spawnFood(self):
         """Spawns food at a random location."""
@@ -190,7 +174,6 @@ class SnakeGame:
             self.foodExists = False
             self.full = True
             self.score += 1
-            self.cur_move = 0
             self.spawnFood()
 
     def checkCollisionWithSelf(self):
@@ -216,30 +199,6 @@ class SnakeGame:
         state.extend([0] * 2 * (max_segments - len(self.snake_list)))
         return state
 
-    def get_reward(self, state, next_state):
-        head_x, head_y = state[:2]
-        next_head_x, next_head_y = next_state[:2]
-        
-        distance_to_food_before = self.get_distance_to_food(head_x, head_y)
-        distance_to_food_after = self.get_distance_to_food(next_head_x, next_head_y)
-
-        if self.game_over:
-            if self.game_over_reason == "Move limit exceeded":
-                return -200
-            elif self.game_over_reason == "Hit itself":
-                return -150  
-            else:
-                return -100 
-        elif self.full:
-            return 50 * len(self.snake_list)
-        else:
-            reward = 1
-            if distance_to_food_after < distance_to_food_before:
-                reward += 1
-            else:
-                reward -= 1 
-            return reward
-        
     def get_direction_from_action(self, action):
         actions = ["UP", "DOWN", "LEFT", "RIGHT"]
         return actions[action]
@@ -255,41 +214,6 @@ class SnakeGame:
         elif direction == "RIGHT":
             return [0, 0, 0, 1]
     
-    def get_distance_to_food(self, headX, headY):
-        return abs(headX - self.foodX) + abs(headY - self.foodY)
-
 if __name__ == '__main__':
-    game = SnakeGame(400, 400, speed=60)
-    input_dim = 2 + 2 + 4 + 1 + 2 * 50  # head (2) + food (2) + direction (4) + current move (1) + snake segments (2 * 50)
-    output_dim = 4  # UP, DOWN, LEFT, RIGHT
-    replay_buffer = ReplayBuffer(10000)
-    agent = DQNAgent(input_dim, output_dim, replay_buffer)
-
-    scores = []
-
-    plt.ion()  
-    fig, ax = plt.subplots()
-    line, = ax.plot([], [])
-    ax.set_xlim(0, 1000)
-    ax.set_ylim(-200, 20000)
-    ax.set_xlabel('Episode')
-    ax.set_ylabel('Total Reward')
-    ax.set_title('Total Reward per Episode')
-
-    for episode in range(1000):
-        total_reward = game.gameLoop(agent, train=True)
-        scores.append(total_reward)
-        print(f"Episode {episode}: Total Reward: {total_reward}")
-        line.set_data(np.arange(len(scores)), scores)
-        ax.set_xlim(0, len(scores) + 1)  # Adjust the x-axis limit to the number of episodes
-        ax.set_ylim(min(scores) - 10, max(scores) + 10)
-
-        plt.draw()
-        plt.pause(0.1)
-
-    plt.ioff()
-    plt.show()
-
-    # Test the trained agent
-    # game.setGameStart()
-    # game.gameLoop(agent, train=False)
+    game = SnakeGame(400, 400)
+    game.gameLoop()
