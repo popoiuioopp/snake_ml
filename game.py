@@ -1,17 +1,19 @@
+from collections import namedtuple
 import pygame
 import random
 import matplotlib.pyplot as plt
 import numpy as np
 
+Point = namedtuple('Point', 'x, y')
+
 class SnakeGame:
     GRID_SIZE = 10
 
-    def __init__(self, width=800, height=800, speed=15, move_limit=500) -> None:
+    def __init__(self, width=800, height=800, speed=15) -> None:
         pygame.init()
         self.width = width
         self.height = height
         self.speed = speed
-        self.move_limit = move_limit
         self.game_over_reason = ""
 
         # Colors
@@ -67,6 +69,7 @@ class SnakeGame:
         self.checkOutOfBound()
         self.checkEat()
         self.checkCollisionWithSelf()
+        print(self.snake_list)
 
     def drawScreen(self):
         """Draws the game screen."""
@@ -83,16 +86,23 @@ class SnakeGame:
 
     def walk(self, direction):
         """Moves the snake in the given direction."""
+        newPosX = self.head[0]
+        newPosY = self.head[1]
+        print(newPosX, newPosY)
+        print(self.GRID_SIZE)
+        print(direction)
         if direction == "UP":
-            self.headY -= self.GRID_SIZE
+            newPosY -= self.GRID_SIZE
         elif direction == "DOWN":
-            self.headY += self.GRID_SIZE
+            newPosY += self.GRID_SIZE
         elif direction == "RIGHT":
-            self.headX += self.GRID_SIZE
+            newPosX += self.GRID_SIZE
         elif direction == "LEFT":
-            self.headX -= self.GRID_SIZE
+            newPosX -= self.GRID_SIZE
 
-        self.snake_list.insert(0, (self.headX, self.headY))
+        print(newPosX, newPosY)
+
+        self.snake_list.insert(0, Point(newPosX, newPosY))
         if not self.full:
             self.snake_list.pop()
         else: 
@@ -101,12 +111,6 @@ class SnakeGame:
     def changeDirection(self, direction):
         """Changes the direction of the snake."""
         self.direction = direction
-
-    def checkOutOfBound(self):
-        """Checks if the snake has gone out of bounds."""
-        if self.headX >= self.width or self.headY >= self.height or self.headX < 0 or self.headY < 0:
-            self.game_over_reason = "Hit the wall"
-            self.game_over = True
 
     def drawGameOverScreen(self):
         """Displays the game over screen."""
@@ -147,29 +151,29 @@ class SnakeGame:
         self.game_over = False
         self.game_over_reason = ""
         self.display.fill(self.black)
-        self.headX = self.width / 2
-        self.headY = self.height / 2
+        self.head = Point(self.width / 2, self.height / 2)
         self.foodExists = False
         self.spawnFood()
         self.score = 0
         self.full = False
-        self.snake_list = [(self.headX, self.headY)]
+        self.snake_list = [self.head]
 
     def spawnFood(self):
         """Spawns food at a random location."""
         if self.foodExists:
             return
-        self.foodX = random.randint(0, (self.width // self.GRID_SIZE) - 1) * self.GRID_SIZE
-        self.foodY = random.randint(0, (self.height // self.GRID_SIZE) - 1) * self.GRID_SIZE 
+        foodX = random.randint(0, (self.width // self.GRID_SIZE) - 1) * self.GRID_SIZE
+        foodY = random.randint(0, (self.height // self.GRID_SIZE) - 1) * self.GRID_SIZE 
+        self.food = Point(foodX, foodY)
         self.foodExists = True
     
     def drawFood(self):
         """Draws the food on the screen."""
-        pygame.draw.rect(self.display, self.blue, [self.foodX, self.foodY, self.GRID_SIZE, self.GRID_SIZE])
+        pygame.draw.rect(self.display, self.blue, [self.food[0], self.food[1], self.GRID_SIZE, self.GRID_SIZE])
 
     def checkEat(self):
         """Checks if the snake has eaten the food."""
-        if (self.headX == self.foodX) and (self.headY == self.foodY):
+        if self.head == self.food:
             self.foodExists = False
             self.full = True
             self.score += 1
@@ -178,41 +182,19 @@ class SnakeGame:
     def checkCollisionWithSelf(self):
         """Checks if the snake has collided with itself."""
         for segment in self.snake_list[1:]:
-            if (self.headX, self.headY) == segment:
+            if (self.head) == segment:
                 self.game_over_reason = "Hit itself"
                 self.game_over = True
 
-    def get_game_state(self):
-        state = [
-            self.headX, self.headY,  
-            self.foodX, self.foodY,
-            self.cur_move
-        ]
-        direction_one_hot = self.encode_direction(self.direction)
-        state.extend(direction_one_hot)
+    def checkOutOfBound(self):
+        """Checks if the snake has gone out of bounds."""
+        if self.head[0] >= self.width or self.head[1] >= self.height or self.head[0] < 0 or self.head[1] < 0:
+            self.game_over_reason = "Hit the wall"
+            self.game_over = True
 
-        for segment in self.snake_list:
-            state.extend(segment)
+    def checkCollision(self, pt: Point):
+        pass
 
-        max_segments = 50
-        state.extend([0] * 2 * (max_segments - len(self.snake_list)))
-        return state
-
-    def get_direction_from_action(self, action):
-        actions = ["UP", "DOWN", "LEFT", "RIGHT"]
-        return actions[action]
-    
-    def encode_direction(self, direction):
-        """Encodes the direction as a one-hot vector."""
-        if direction == "UP":
-            return [1, 0, 0, 0]
-        elif direction == "DOWN":
-            return [0, 1, 0, 0]
-        elif direction == "LEFT":
-            return [0, 0, 1, 0]
-        elif direction == "RIGHT":
-            return [0, 0, 0, 1]
-    
 if __name__ == '__main__':
     game = SnakeGame(400, 400)
     game.gameLoop()
