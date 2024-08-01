@@ -1,7 +1,6 @@
 from collections import namedtuple
 import pygame
 import random
-import matplotlib.pyplot as plt
 import numpy as np
 
 Point = namedtuple('Point', 'x, y')
@@ -14,7 +13,6 @@ class SnakeGame:
         self.width = width
         self.height = height
         self.speed = speed
-        self.game_over_reason = ""
 
         # Colors
         self.white = (255, 255, 255)
@@ -66,10 +64,9 @@ class SnakeGame:
         """Updates the game state."""
         self.clock.tick(self.speed)
         self.walk(self.direction)
-        self.checkOutOfBound()
         self.checkEat()
-        self.checkCollisionWithSelf()
-        print(self.snake_list)
+        self.head = self.snake_list[0]
+        self.game_over = self.checkCollision(self.head)
 
     def drawScreen(self):
         """Draws the game screen."""
@@ -82,15 +79,13 @@ class SnakeGame:
     def drawSnake(self):
         """Draws the snake."""
         for segment in self.snake_list:
-            pygame.draw.rect(self.display, self.green, [segment[0], segment[1], self.GRID_SIZE, self.GRID_SIZE])
+            pygame.draw.rect(self.display, self.green, [segment.x, segment.y, self.GRID_SIZE, self.GRID_SIZE])
 
     def walk(self, direction):
         """Moves the snake in the given direction."""
-        newPosX = self.head[0]
-        newPosY = self.head[1]
-        print(newPosX, newPosY)
-        print(self.GRID_SIZE)
-        print(direction)
+        newPosX = self.head.x
+        newPosY = self.head.y
+
         if direction == "UP":
             newPosY -= self.GRID_SIZE
         elif direction == "DOWN":
@@ -100,9 +95,8 @@ class SnakeGame:
         elif direction == "LEFT":
             newPosX -= self.GRID_SIZE
 
-        print(newPosX, newPosY)
-
-        self.snake_list.insert(0, Point(newPosX, newPosY))
+        new_head = Point(newPosX, newPosY)
+        self.snake_list.insert(0, new_head)
         if not self.full:
             self.snake_list.pop()
         else: 
@@ -115,7 +109,7 @@ class SnakeGame:
     def drawGameOverScreen(self):
         """Displays the game over screen."""
         self.display.fill(self.red)
-        self.message("Game Over: " + self.game_over_reason, self.black)
+        self.message("Game Over", self.black)
         pygame.display.update()
 
     def handleGameOver(self):
@@ -129,11 +123,10 @@ class SnakeGame:
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_c:
                         self.setGameStart()
+                        return
                     if event.key == pygame.K_q:
                         pygame.quit()
                         exit(1)
-            if not self.game_over:
-                break
 
     def message(self, msg, color):
         """Displays a message on the screen."""
@@ -149,7 +142,6 @@ class SnakeGame:
         """Initializes the game state."""
         self.direction = "RIGHT"
         self.game_over = False
-        self.game_over_reason = ""
         self.display.fill(self.black)
         self.head = Point(self.width / 2, self.height / 2)
         self.foodExists = False
@@ -169,7 +161,7 @@ class SnakeGame:
     
     def drawFood(self):
         """Draws the food on the screen."""
-        pygame.draw.rect(self.display, self.blue, [self.food[0], self.food[1], self.GRID_SIZE, self.GRID_SIZE])
+        pygame.draw.rect(self.display, self.blue, [self.food.x, self.food.y, self.GRID_SIZE, self.GRID_SIZE])
 
     def checkEat(self):
         """Checks if the snake has eaten the food."""
@@ -182,18 +174,22 @@ class SnakeGame:
     def checkCollisionWithSelf(self):
         """Checks if the snake has collided with itself."""
         for segment in self.snake_list[1:]:
-            if (self.head) == segment:
-                self.game_over_reason = "Hit itself"
+            if self.snake_list[0] == segment:
                 self.game_over = True
 
     def checkOutOfBound(self):
         """Checks if the snake has gone out of bounds."""
-        if self.head[0] >= self.width or self.head[1] >= self.height or self.head[0] < 0 or self.head[1] < 0:
-            self.game_over_reason = "Hit the wall"
+        if self.head.x >= self.width or self.head.y >= self.height or self.head.x < 0 or self.head.y < 0:
             self.game_over = True
 
     def checkCollision(self, pt: Point):
-        pass
+        if pt.x >= self.width or pt.y >= self.height or pt.x < 0 or pt.y < 0:
+            return True
+
+        for segment in self.snake_list[1:]:
+            if pt == segment:
+                return True
+        return False
 
 if __name__ == '__main__':
     game = SnakeGame(400, 400)
