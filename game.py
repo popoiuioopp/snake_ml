@@ -53,12 +53,16 @@ class SnakeGame:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_UP and self.direction != "DOWN":
                     self.changeDirection("UP")
+                    return
                 if event.key == pygame.K_DOWN and self.direction != "UP":
                     self.changeDirection("DOWN")
+                    return
                 if event.key == pygame.K_LEFT and self.direction != "RIGHT":
                     self.changeDirection("LEFT")
+                    return
                 if event.key == pygame.K_RIGHT and self.direction != "LEFT":
                     self.changeDirection("RIGHT")
+                    return
 
     def updateGame(self):
         """Updates the game state."""
@@ -71,8 +75,8 @@ class SnakeGame:
     def drawScreen(self):
         """Draws the game screen."""
         self.display.fill(self.black)
-        self.drawSnake()
         self.drawFood()
+        self.drawSnake()
         self.drawScore()
         pygame.display.update()
 
@@ -145,18 +149,20 @@ class SnakeGame:
         self.display.fill(self.black)
         self.head = Point(self.width / 2, self.height / 2)
         self.foodExists = False
-        self.spawnFood()
+        self.available_points  = set(Point(x, y) for x in range(0, self.width, self.GRID_SIZE) for y in range(0, self.height, self.GRID_SIZE))
         self.score = 0
         self.full = False
         self.snake_list = [self.head]
+        self.spawnFood()
 
     def spawnFood(self):
         """Spawns food at a random location."""
         if self.foodExists:
             return
-        foodX = random.randint(0, (self.width // self.GRID_SIZE) - 1) * self.GRID_SIZE
-        foodY = random.randint(0, (self.height // self.GRID_SIZE) - 1) * self.GRID_SIZE 
-        self.food = Point(foodX, foodY)
+        self.available_points = self.available_points - set(self.snake_list)
+        pointList = list(self.available_points)
+
+        self.food = random.choice(pointList)
         self.foodExists = True
     
     def drawFood(self):
