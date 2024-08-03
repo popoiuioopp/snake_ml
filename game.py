@@ -179,17 +179,6 @@ class SnakeGame:
             self.spawnFood()
             return True
 
-    def checkCollisionWithSelf(self):
-        """Checks if the snake has collided with itself."""
-        for segment in self.snake_list[1:]:
-            if self.snake_list[0] == segment:
-                self.game_over = True
-
-    def checkOutOfBound(self):
-        """Checks if the snake has gone out of bounds."""
-        if self.head.x >= self.width or self.head.y >= self.height or self.head.x < 0 or self.head.y < 0:
-            self.game_over = True
-
     def checkCollision(self, pt: Point):
         if pt.x >= self.width or pt.y >= self.height or pt.x < 0 or pt.y < 0:
             return True
