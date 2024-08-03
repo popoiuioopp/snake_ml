@@ -1,7 +1,6 @@
 from collections import namedtuple
 import pygame
 import random
-import numpy as np
 
 Point = namedtuple('Point', 'x, y')
 
@@ -69,7 +68,6 @@ class SnakeGame:
         self.clock.tick(self.speed)
         self.walk(self.direction)
         self.checkEat()
-        self.head = self.snake_list[0]
         self.game_over = self.checkCollision(self.head)
 
     def drawScreen(self):
@@ -105,6 +103,7 @@ class SnakeGame:
             self.snake_list.pop()
         else: 
             self.full = False
+        self.head = self.snake_list[0]
 
     def changeDirection(self, direction):
         """Changes the direction of the snake."""
@@ -151,6 +150,7 @@ class SnakeGame:
         self.foodExists = False
         self.available_points  = set(Point(x, y) for x in range(0, self.width, self.GRID_SIZE) for y in range(0, self.height, self.GRID_SIZE))
         self.score = 0
+        self.curMove = 0
         self.full = False
         self.snake_list = [self.head]
         self.spawnFood()
@@ -169,13 +169,15 @@ class SnakeGame:
         """Draws the food on the screen."""
         pygame.draw.rect(self.display, self.blue, [self.food.x, self.food.y, self.GRID_SIZE, self.GRID_SIZE])
 
-    def checkEat(self):
+    def checkEat(self) -> bool:
         """Checks if the snake has eaten the food."""
         if self.head == self.food:
             self.foodExists = False
             self.full = True
             self.score += 1
+            self.curMove = 0
             self.spawnFood()
+            return True
 
     def checkCollisionWithSelf(self):
         """Checks if the snake has collided with itself."""
@@ -196,6 +198,32 @@ class SnakeGame:
             if pt == segment:
                 return True
         return False
+
+    def decodeOneHotDir(self, dir: list[int]) -> str:
+        if dir == [1, 0, 0, 0]:
+            return "LEFT"
+        if dir == [0, 1, 0, 0]:
+            return "RIGHT"
+        if dir == [0, 0, 1, 0]:
+            return "UP"
+        if dir == [0, 0, 0, 1]:
+            return "DOWN"
+
+    def playStep(self, dir: str) -> tuple[int, bool, int]:
+        self.walk(dir)
+        reward = 0
+
+        if self.checkCollision(self.head) or self.curMove > 100:
+            self.game_over = True
+            reward = -10
+            return reward, self.game_over, self.score
+
+        if self.checkEat():
+            reward = 10
+
+        self.clock.tick(self.speed)
+
+        return reward, self.game_over, self.score
 
 if __name__ == '__main__':
     game = SnakeGame(400, 400)
