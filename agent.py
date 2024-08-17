@@ -48,6 +48,11 @@ class DQNSnake(nn.Module):
         file_name = os.path.join(model_folder_path, file_name)
         torch.save(self.state_dict(), file_name)
 
+    def load(self, file_name='model.pth'):
+        model_folder_path = './model'
+        file_name = os.path.join(model_folder_path, file_name)
+        self.load_state_dict(torch.load(file_name))
+
 class QTrainer:
     def __init__(self, model, lr, gamma) -> None:
         self.lr = lr
@@ -83,12 +88,14 @@ class QTrainer:
         self.optimizer.step()
 
 class DQNAgent:
-    def __init__(self):
+    def __init__(self, load_model=False):
         self.n_games = 0
         self.epsilon = 0  # randomness
         self.gamma = 0.9  # discount rate
         self.memory = deque(maxlen=MAX_MEMORY)  
         self.model = DQNSnake(12, 4, 256) #input size, hidden size, output size
+        if load_model:
+            self.model.load()
         self.trainer = QTrainer(self.model, lr=LR, gamma=self.gamma)
 
     def get_state(self, game: SnakeGame):
@@ -152,7 +159,7 @@ class DQNAgent:
             self.trainer.train_step(state, action, reward, next_state, done)
 
     def get_action(self, state):
-        self.epsilon = 100 - self.n_games
+        self.epsilon = 1 - self.n_games
         final_move = [0, 0, 0, 0]
         if random.randint(0, 200) < self.epsilon:
             move = random.randint(0, 3)
@@ -167,7 +174,7 @@ class DQNAgent:
 
 if __name__ == "__main__":
     game = SnakeGame(speed=100)
-    agent = DQNAgent()
+    agent = DQNAgent(load_model=True)
     plot_scores = []
     plot_mean_scores = []
     total_score = 0
