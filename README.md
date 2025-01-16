@@ -2,6 +2,8 @@
 
 This project is a Python implementation of a reinforcement learning (RL) agent that learns to play the Snake game using Deep Q-Networks (DQNs). The project follows the methodology outlined in [this article](https://medium.com/@nancy.q.zhou/teaching-an-ai-to-play-the-snake-game-using-reinforcement-learning-6d2a6e8f3b1c).
 
+https://github.com/user-attachments/assets/f8098a40-79b7-4756-8690-940492df0da1
+
 ## Overview
 
 In this project, I have implemented a Snake game and an RL agent using PyTorch. The agent uses a DQN to learn the optimal policy for playing the game. The key components of the project are:
